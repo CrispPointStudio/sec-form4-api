@@ -1,0 +1,76 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "SEC Form 4 Insider Trades API",
+    "description": "JSON REST API for SEC Form 4 insider trading filings from EDGAR, by ticker or market-wide. Available on RapidAPI: https://rapidapi.com/crisp-point-studio-crisp-point-studio-default/api/live-sec-form-4-insider-trades",
+    "version": "1.0.0",
+    "contact": {
+      "name": "Crisp Point Studio",
+      "url": "https://rapidapi.com/crisp-point-studio-crisp-point-studio-default/api/live-sec-form-4-insider-trades"
+    }
+  },
+  "servers": [
+    { "url": "https://live-sec-form-4-insider-trades.p.rapidapi.com", "description": "RapidAPI" }
+  ],
+  "security": [ { "RapidAPIKey": [], "RapidAPIHost": [] } ],
+  "paths": {
+    "/api/insider-trades": {
+      "get": {
+        "operationId": "getInsiderTrades",
+        "summary": "List recent Form 4 insider filings",
+        "description": "Returns the most recent Form 4 filings, newest first. With `ticker`, returns filings for that issuer; without it, the latest Form 4s across the market. EDGAR serves at most 100 filings per query.",
+        "parameters": [
+          { "name": "ticker", "in": "query", "required": false, "description": "Stock ticker, e.g. AAPL. Omit for the market-wide feed.", "schema": { "type": "string" }, "example": "AAPL" },
+          { "name": "limit", "in": "query", "required": false, "description": "Maximum filings to return.", "schema": { "type": "integer", "minimum": 1, "maximum": 100, "default": 50 }, "example": 25 }
+        ],
+        "responses": {
+          "200": {
+            "description": "Form 4 filings, newest first.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/FilingsResponse" },
+                "example": {
+                  "results": [
+                    {
+                      "title": "4  - Statement of changes in beneficial ownership of securities",
+                      "updated": "2026-10-08T18:30:32-04:00",
+                      "link": "https://www.sec.gov/Archives/edgar/data/320193/000114036126039158/0001140361-26-039158-index.htm"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": { "description": "Missing or invalid RapidAPI key." },
+          "422": { "description": "Invalid query parameter, e.g. limit outside 1–100." },
+          "429": { "description": "Plan quota or rate limit exceeded." },
+          "502": { "description": "SEC EDGAR was unreachable." }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "RapidAPIKey": { "type": "apiKey", "in": "header", "name": "X-RapidAPI-Key" },
+      "RapidAPIHost": { "type": "apiKey", "in": "header", "name": "X-RapidAPI-Host" }
+    },
+    "schemas": {
+      "FilingsResponse": {
+        "type": "object",
+        "required": ["results"],
+        "properties": {
+          "results": { "type": "array", "items": { "$ref": "#/components/schemas/Filing" } }
+        }
+      },
+      "Filing": {
+        "type": "object",
+        "required": ["title", "updated", "link"],
+        "properties": {
+          "title": { "type": "string", "description": "EDGAR entry title: form type and description for ticker queries, reporting person or issuer for the market-wide feed." },
+          "updated": { "type": "string", "format": "date-time", "description": "Filing timestamp, ISO 8601 with US Eastern offset.", "example": "2026-10-08T18:30:32-04:00" },
+          "link": { "type": "string", "format": "uri", "description": "URL of the filing index on sec.gov." }
+        }
+      }
+    }
+  }
+}
